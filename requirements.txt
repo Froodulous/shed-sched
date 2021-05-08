@@ -1,0 +1,4 @@
+RPi.GPIO==0.7.1a4
+RPi.bme280==0.2.3
+smbus2
+pytz
