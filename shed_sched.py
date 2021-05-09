@@ -9,6 +9,10 @@ from datetime import datetime
 from pytz import timezone
 import argparse
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
 
 # Create the parser and add arguments
 parser = argparse.ArgumentParser()
@@ -32,17 +36,17 @@ TIME_ZONE = args.time_zone
 DELAY = args.delay
 LOOP = args.loop
 
-print(f'Target Temperature is {TARGET_TEMPERATURE}°C')
-print(f'Using GPIO number {RELAY_GPIO}')
-print(f'Starting at {START_TIME}:00 and ending at {END_TIME}:00')
+logging.info(f'Target Temperature is {TARGET_TEMPERATURE}°C')
+logging.info(f'Using GPIO number {RELAY_GPIO}')
+logging.info(f'Starting at {START_TIME}:00 and ending at {END_TIME}:00')
 
 GPIO.setwarnings(False)
 mode = GPIO.getmode()
 if mode != GPIO.BCM:
     GPIO.setmode(GPIO.BCM)  # GPIO Numbers instead of board numbers
-    print("Setting GPIO Mode to BCM")
+    logging.info("Setting GPIO Mode to BCM")
 
-print(
+logging.info(
     f'Running setup for GPIO {RELAY_GPIO}. Setting to OUT mode and ensuring turned off.')
 GPIO.setup(RELAY_GPIO, GPIO.OUT)  # GPIO Assign mode
 GPIO.output(RELAY_GPIO, GPIO.LOW)  # off
@@ -64,12 +68,12 @@ def get_temperature():
 
 
 def turn_on_relay():
-    print("Turning on relay")
+    logging.info("Turning on relay")
     GPIO.output(RELAY_GPIO, GPIO.HIGH)  # on
 
 
 def turn_off_relay():
-    print("Turning off relay")
+    logging.info("Turning off relay")
     GPIO.output(RELAY_GPIO, GPIO.LOW)  # off
 
 
@@ -78,15 +82,15 @@ def is_working_hours():
     hour = now.hour
     day = now.weekday()
     if hour >= START_TIME and hour < END_TIME:
-        print(f'Hour {hour} is within working hours')
+        logging.info(f'Hour {hour} is within working hours')
         if day <= END_DAY:  # 0 is Monday, 4 is Friday
-            print(f'Day {day} is a working day')
+            logging.info(f'Day {day} is a working day')
             return True
         else:
-            print(f'Day {day} is not a working day')
+            logging.info(f'Day {day} is not a working day')
             return False
     else:
-        print(f'Hour {hour} is not within working hours')
+        logging.info(f'Hour {hour} is not within working hours')
         return False
 
 
@@ -95,13 +99,13 @@ last_state = False
 
 while True:
     temperature = get_temperature()
-    print(f'The temperature in the shed is {temperature}°C')
+    logging.info(f'The temperature in the shed is {temperature}°C')
 
     now = datetime.now()
 
     if last_turned_off:
         seconds_diff = round((now - last_turned_off).total_seconds())
-        print(f'Heater was last turned off {seconds_diff} seconds ago')
+        logging.info(f'Heater was last turned off {seconds_diff} seconds ago')
 
     if (temperature < TARGET_TEMPERATURE) and is_working_hours():
         if not last_state and (not last_turned_off or seconds_diff > DELAY):
