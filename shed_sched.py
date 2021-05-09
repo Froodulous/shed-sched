@@ -40,6 +40,7 @@ logging.info(f'Target Temperature is {TARGET_TEMPERATURE}°C')
 logging.info(f'Using GPIO number {RELAY_GPIO}')
 logging.info(f'Starting at {START_TIME}:00 and ending at {END_TIME}:00')
 
+# Set up GPIO for heater relay
 GPIO.setwarnings(False)
 mode = GPIO.getmode()
 if mode != GPIO.BCM:
@@ -51,17 +52,17 @@ logging.info(
 GPIO.setup(RELAY_GPIO, GPIO.OUT)  # GPIO Assign mode
 GPIO.output(RELAY_GPIO, GPIO.LOW)  # off
 
+# Set up BME280 Temperature Sensor
+BME280_BUS = smbus2.SMBus(1)
+BME280_ADDRESS = 0x76
+BME280_CALIBRATION_PARAMS = bme280.load_calibration_params(
+    BME280_BUS, BME280_ADDRESS)
+
 
 def get_temperature():
-    port = 1
-    address = 0x76
-    bus = smbus2.SMBus(port)
-
-    calibration_params = bme280.load_calibration_params(bus, address)
-
     # the sample method will take a single reading and return a
     # compensated_reading object
-    data = bme280.sample(bus, address, calibration_params)
+    data = bme280.sample(BME280_BUS, BME280_ADDRESS, BME280_CALIBRATION_PARAMS)
 
     # the compensated_reading class has the following attributes
     return round(data.temperature, 2)
