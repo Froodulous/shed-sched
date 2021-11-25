@@ -8,7 +8,6 @@ import bme280
 from datetime import datetime
 from pytz import timezone
 import argparse
-import time
 import logging
 
 logging.basicConfig(level=logging.INFO,
@@ -18,16 +17,18 @@ logging.basicConfig(level=logging.INFO,
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-t', '--target-temperature', type=float, default=20.0)
+parser.add_argument('-mt', '--min-temperature', type=float, default=7.0)
 parser.add_argument('-g', '--gpio', type=int, default=12)
 parser.add_argument('-st', '--start-time', type=int, default=8)
 parser.add_argument('-et', '--end-time', type=int, default=17)
 parser.add_argument('-ed', '--end-day', type=int, default=4)
 parser.add_argument('-tz', '--time-zone', type=str, default='Europe/London')
-parser.add_argument('-d', '--delay', type=int, default=300)
-parser.add_argument('-l', '--loop', type=int, default=10)
+parser.add_argument('-d', '--delay', type=int, default=900)
+parser.add_argument('-l', '--loop', type=int, default=30)
 
 args = parser.parse_args()
 TARGET_TEMPERATURE = args.target_temperature
+MIN_TEMPERATURE = args.min_temperature
 RELAY_GPIO = args.gpio
 START_TIME = args.start_time
 END_TIME = args.end_time
@@ -37,6 +38,7 @@ DELAY = args.delay
 LOOP = args.loop
 
 logging.info(f'Target Temperature is {TARGET_TEMPERATURE}°C')
+logging.info(f'Minimum Temperature is {MIN_TEMPERATURE}°C')
 logging.info(f'Using GPIO number {RELAY_GPIO}')
 logging.info(f'Starting at {START_TIME}:00 and ending at {END_TIME}:00')
 
@@ -83,37 +85,32 @@ def is_working_hours():
     hour = now.hour
     day = now.weekday()
     if hour >= START_TIME and hour < END_TIME:
-        logging.info(f'Hour {hour} is within working hours')
+        logging.debug(f'Hour {hour} is within working hours')
         if day <= END_DAY:  # 0 is Monday, 4 is Friday
-            logging.info(f'Day {day} is a working day')
+            logging.debug(f'Day {day} is a working day')
             return True
         else:
-            logging.info(f'Day {day} is not a working day')
+            logging.debug(f'Day {day} is not a working day')
             return False
     else:
-        logging.info(f'Hour {hour} is not within working hours')
+        logging.debug(f'Hour {hour} is not within working hours')
         return False
 
 
-last_turned_off = None
 last_state = False
 
 while True:
     temperature = get_temperature()
     logging.info(f'The temperature in the shed is {temperature}°C')
 
-    now = datetime.now()
-
-    if last_turned_off:
-        seconds_diff = round((now - last_turned_off).total_seconds())
-        logging.info(f'Heater was last turned off {seconds_diff} seconds ago')
-
-    if (temperature < TARGET_TEMPERATURE) and is_working_hours():
-        if not last_state and (not last_turned_off or seconds_diff > DELAY):
+    if (temperature < TARGET_TEMPERATURE and is_working_hours()) or temperature < MIN_TEMPERATURE:
+        if not last_state:
             turn_on_relay()
             last_state = True
     elif last_state:
         turn_off_relay()
-        last_turned_off = now
+        logging.info(f'Waiting for {DELAY} seconds')
+        time.sleep(DELAY)
         last_state = False
     time.sleep(LOOP)
+
