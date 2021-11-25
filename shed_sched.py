@@ -102,15 +102,18 @@ while True:
     temperature = get_temperature()
     logging.info(f"The temperature in the shed is {temperature}°C")
 
-    if (
-        temperature < TARGET_TEMPERATURE and is_working_hours()
-    ) or temperature < MIN_TEMPERATURE:
+    if is_working_hours():
+        threshold_temperature = TARGET_TEMPERATURE
+    else:
+        threshold_temperature = MIN_TEMPERATURE
+
+    if temperature < threshold_temperature:
         if not last_state:
             turn_on_relay()
             last_state = True
     elif last_state:
         turn_off_relay()
+        last_state = False
         logging.info(f"Waiting for {DELAY} seconds")
         time.sleep(DELAY)
-        last_state = False
     time.sleep(LOOP)
