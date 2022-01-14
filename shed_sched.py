@@ -26,8 +26,8 @@ parser.add_argument("-d", "--delay", type=int, default=900)
 parser.add_argument("-l", "--loop", type=int, default=30)
 
 args = parser.parse_args()
-TARGET_TEMPERATURE = args.target_temperature
-MIN_TEMPERATURE = args.min_temperature
+TARGET_TEMPERATURE = 400
+MIN_TEMPERATURE = 400
 RELAY_GPIO = args.gpio
 START_TIME = args.start_time
 END_TIME = args.end_time
